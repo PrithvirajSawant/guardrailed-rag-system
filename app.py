@@ -3,7 +3,7 @@
 import streamlit as st
 import os
 from langchain_groq import ChatGroq
-from langchain_community.document_loaders import WebBaseLoader
+from langchain_community.document_loaders import WebBaseLoader, TextLoader
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
@@ -32,16 +32,25 @@ agent_control.init(
 if "vectors" not in st.session_state:
     st.session_state.embeddings = OllamaEmbeddings(model="nomic-embed-text")
     
-    st.session_state.loader = WebBaseLoader("https://docs.langchain.com/langsmith/home")
-    st.session_state.docs = st.session_state.loader.load()
+    st.session_state.loader = WebBaseLoader("https://docs.langchain.com/langsmith/home") #initializes the loader with the URL
+    st.session_state.docs = st.session_state.loader.load() #get's converted into document object - not pdf, csv or .txt
+    # We load (pdf, csv or .txt) files or pasre HTML content from web to convert it into document object.
+    # If the document loaded has more than one page then that many document objects are created [list of documents].
+    # load() return type is list of documents - So even if we have 1 doc. obj. it will return a "list with 1 doc. obj. inside".
     
     st.session_state.txt_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     st.session_state.final_doc = st.session_state.txt_splitter.split_documents(st.session_state.docs[:50])
-    
+    # print("-----------------------------")
+    # print(st.session_state.final_doc[0])
+    # print("-----------------------------")
     st.session_state.vectors = FAISS.from_documents(st.session_state.final_doc, st.session_state.embeddings)
     st.session_state.vectors.save_local("my_FAISS_vdb")
 
 # st.title("ChatGroq Bot with Moderation and n8n Webhook Alerts")
+# print("-----------------------------")
+# print(st.session_state.final_doc[0])
+# print("-----------------------------")
+
 st.title("RAG ChatBot with Moderation")
 llm = ChatGroq(groq_api_key = groq_api_key, model_name="meta-llama/llama-4-scout-17b-16e-instruct")
 
